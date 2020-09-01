@@ -18,7 +18,7 @@ build:
 	   -s ASSERTIONS=2 \
 	   -s ENVIRONMENT=web \
 	   -s MODULARIZE=1 \
-	   -s EXPORT_NAME="EssentiaWASMSaturation" \
+	   -s EXPORT_NAME="EssentiaWASMStartStopSilence" \
 	   --post-js $(POST_JS_WEB_WASM) \
 	   -s ALLOW_MEMORY_GROWTH=1 || exit 1	
 	
