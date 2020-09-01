@@ -31,8 +31,8 @@ void StartStopSilenceExtractor::configure(const int frameSize, const int hopSize
   );
 };
 
-// compute method for your extractor
-int StartStopSilenceExtractor::compute(const val& audioData) {
+// compute methods for your extractor
+int StartStopSilenceExtractor::computeStartframe(const val& audioData) {
 
   // convert JS Float32 typed array into std::vector<float>
   // eg. getChannelData output from the Web Audio API AudioContext instance
@@ -44,6 +44,31 @@ int StartStopSilenceExtractor::compute(const val& audioData) {
   _StartStopSilence->input("frame").set(frameFrameCutter);
   int startFrameStartStopSilence;
   _StartStopSilence->output("startFrame").set(startFrameStartStopSilence);
+
+  while (true) {
+      // compute a frame
+      _FrameCutter->compute();
+      // if it was the last one (ie: it was empty), then we are done.
+      if (!frameFrameCutter.size()) {
+          break;
+      }
+      // if the frame is silent, just drop it and go on processing
+      if (isSilent(frameFrameCutter)) continue;
+      _StartStopSilence->compute();
+  }
+      return startFrameStartStopSilence;
+};
+
+int StartStopSilenceExtractor::computeStopframe(const val& audioData) {
+
+  // convert JS Float32 typed array into std::vector<float>
+  // eg. getChannelData output from the Web Audio API AudioContext instance
+  std::vector<float> audioSignal = float32ArrayToVector(audioData);
+
+  _FrameCutter->input("signal").set(audioSignal);
+  std::vector<Real> frameFrameCutter;
+  _FrameCutter->output("frame").set(frameFrameCutter);
+  _StartStopSilence->input("frame").set(frameFrameCutter);
   int stopFrameStartStopSilence;
   _StartStopSilence->output("stopFrame").set(stopFrameStartStopSilence);
 
@@ -57,7 +82,7 @@ int StartStopSilenceExtractor::compute(const val& audioData) {
       // if the frame is silent, just drop it and go on processing
       if (isSilent(frameFrameCutter)) continue;
       _StartStopSilence->compute();
-      }
+  }
       return stopFrameStartStopSilence;
 };
 

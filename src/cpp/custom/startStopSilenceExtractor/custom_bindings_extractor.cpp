@@ -6,7 +6,8 @@ EMSCRIPTEN_BINDINGS(Class_Extractor) {
 class_<StartStopSilenceExtractor>("StartStopSilenceExtractor")
 .constructor<int, int>()
 .function("configure", &StartStopSilenceExtractor::configure)
-.function("compute", &StartStopSilenceExtractor::compute)
+.function("computeStartframe", &StartStopSilenceExtractor::computeStartframe)
+.function("computeStopframe", &StartStopSilenceExtractor::computeStopframe)
 .function("reset", &StartStopSilenceExtractor::reset)
 .function("shutdown", &StartStopSilenceExtractor::shutdown)
 ;

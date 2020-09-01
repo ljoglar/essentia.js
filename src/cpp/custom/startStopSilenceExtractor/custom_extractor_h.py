@@ -2,9 +2,10 @@
    import cog
 
    extractors = {'StartStopSilenceExtractor':{'params': 'const int frameSize=512, const int hopSize=256' ,
-                                                'algorithms': ['FrameCutter', 'StartStopSilence'],
-                                                'compute_return': 'int'
-                                                }
+                                              'algorithms': ['FrameCutter', 'StartStopSilence'],
+                                              'outputs': ['startFrame', 'stopFrame'],
+                                              'compute_return': 'int'
+                                             }
                  }
 
    cog.outl("#ifndef __EXTRACTOR_EXAMPLE_H__ ")
@@ -33,8 +34,9 @@
       cog.outl()
       cog.outl("    void configure(%s);" % extractor['params'])
       cog.outl()
-      cog.outl("    %s compute(const val& audioData);" %extractor['compute_return'])
-      cog.outl()
+      for output in extractor['outputs']:
+         cog.outl("    %s compute%s(const val& audioData);" % (extractor['compute_return'], output.capitalize()))
+         cog.outl()
       cog.outl("    void reset();")
       cog.outl()
       cog.outl("    void shutdown();")

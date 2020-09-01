@@ -33,37 +33,7 @@ void SaturationDetectorExtractor::configure(const int frameSize, const int hopSi
   );
 };
 
-// compute method for your extractor
-std::vector<float> SaturationDetectorExtractor::computeEnds(const val& audioData) {
-
-  // convert JS Float32 typed array into std::vector<float>
-  // eg. getChannelData output from the Web Audio API AudioContext instance
-  std::vector<float> audioSignal = float32ArrayToVector(audioData);
-
-  _FrameCutter->input("signal").set(audioSignal);
-  std::vector<Real> frameFrameCutter;
-  _FrameCutter->output("frame").set(frameFrameCutter);
-  _SaturationDetector->input("frame").set(frameFrameCutter);
-  std::vector<Real> startsSaturationDetector;
-  _SaturationDetector->output("starts").set(startsSaturationDetector);
-  std::vector<Real> endsSaturationDetector;
-  _SaturationDetector->output("ends").set(endsSaturationDetector);
-
-  while (true) {
-      // compute a frame
-      _FrameCutter->compute();
-      // if it was the last one (ie: it was empty), then we are done.
-      if (!frameFrameCutter.size()) {
-          break;
-      }
-      // if the frame is silent, just drop it and go on processing
-      if (isSilent(frameFrameCutter)) continue;
-      _SaturationDetector->compute();
-      }
-      return endsSaturationDetector;
-};
-
-// compute method for your extractor
+// compute methods for your extractor
 std::vector<float> SaturationDetectorExtractor::computeStarts(const val& audioData) {
 
   // convert JS Float32 typed array into std::vector<float>
@@ -74,8 +44,6 @@ std::vector<float> SaturationDetectorExtractor::computeStarts(const val& audioDa
   std::vector<Real> frameFrameCutter;
   _FrameCutter->output("frame").set(frameFrameCutter);
   _SaturationDetector->input("frame").set(frameFrameCutter);
-  std::vector<Real> endsSaturationDetector;
-  _SaturationDetector->output("ends").set(endsSaturationDetector);
   std::vector<Real> startsSaturationDetector;
   _SaturationDetector->output("starts").set(startsSaturationDetector);
 
@@ -89,8 +57,35 @@ std::vector<float> SaturationDetectorExtractor::computeStarts(const val& audioDa
       // if the frame is silent, just drop it and go on processing
       if (isSilent(frameFrameCutter)) continue;
       _SaturationDetector->compute();
-      }
+  }
       return startsSaturationDetector;
+};
+
+std::vector<float> SaturationDetectorExtractor::computeEnds(const val& audioData) {
+
+  // convert JS Float32 typed array into std::vector<float>
+  // eg. getChannelData output from the Web Audio API AudioContext instance
+  std::vector<float> audioSignal = float32ArrayToVector(audioData);
+
+  _FrameCutter->input("signal").set(audioSignal);
+  std::vector<Real> frameFrameCutter;
+  _FrameCutter->output("frame").set(frameFrameCutter);
+  _SaturationDetector->input("frame").set(frameFrameCutter);
+  std::vector<Real> endsSaturationDetector;
+  _SaturationDetector->output("ends").set(endsSaturationDetector);
+
+  while (true) {
+      // compute a frame
+      _FrameCutter->compute();
+      // if it was the last one (ie: it was empty), then we are done.
+      if (!frameFrameCutter.size()) {
+          break;
+      }
+      // if the frame is silent, just drop it and go on processing
+      if (isSilent(frameFrameCutter)) continue;
+      _SaturationDetector->compute();
+  }
+      return endsSaturationDetector;
 };
 
 // method for resetting the internal states used in the extractor

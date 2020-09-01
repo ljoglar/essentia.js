@@ -2,7 +2,9 @@
    import cog
 
    extractors = {'SaturationDetectorExtractor':{'params': 'const int frameSize=512, const int hopSize=256' ,
-                                                'algorithms': ['FrameCutter', 'SaturationDetector']
+                                                'algorithms': ['FrameCutter', 'SaturationDetector'],
+                                                'outputs': ['starts', 'ends'],
+                                                'compute_return': 'std::vector<float>'
                                                 }
                  }
 
@@ -32,8 +34,9 @@
       cog.outl()
       cog.outl("    void configure(%s);" % extractor['params'])
       cog.outl()
-      cog.outl("    std::vector<float> compute(const val& audioData);")
-      cog.outl()
+      for output in extractor['outputs']:
+         cog.outl("    %s compute%s(const val& audioData);" % (extractor['compute_return'], output.capitalize()))
+         cog.outl()
       cog.outl("    void reset();")
       cog.outl()
       cog.outl("    void shutdown();")

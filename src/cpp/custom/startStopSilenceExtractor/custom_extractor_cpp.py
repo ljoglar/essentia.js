@@ -68,45 +68,46 @@
         cog.outl('};')
         cog.outl()
 
-        cog.outl('// compute method for your extractor')
-        cog.outl('%s %s::compute(const val& audioData) {' % (extractor['compute_return'], extractor_key))
-        cog.outl()
-        cog.outl('  // convert JS Float32 typed array into std::vector<float>')
-        cog.outl('  // eg. getChannelData output from the Web Audio API AudioContext instance')
-        cog.outl('  std::vector<float> audioSignal = float32ArrayToVector(audioData);')
-        variablesChain = 'audioSignal'
-        variableFrame = ''
-        cog.outl()
-        for algorithm_name in extractor['algorithms']:
-            for input_name in extractor['algorithms'][algorithm_name]['inputs']:
-                cog.outl('  _%s->input("%s").set(%s);' % (algorithm_name, input_name, variablesChain))
+        cog.outl('// compute methods for your extractor')
+        last_algorithm_name = list(extractor['algorithms'].keys())[-1]
+        for last_algorithm_output_name in extractor['algorithms'][last_algorithm_name]['outputs']:
+            cog.outl('%s %s::compute%s(const val& audioData) {' % (extractor['compute_return'], extractor_key, last_algorithm_output_name.capitalize()))
+            cog.outl()
+            cog.outl('  // convert JS Float32 typed array into std::vector<float>')
+            cog.outl('  // eg. getChannelData output from the Web Audio API AudioContext instance')
+            cog.outl('  std::vector<float> audioSignal = float32ArrayToVector(audioData);')
+            variablesChain = 'audioSignal'
+            variableFrame = ''
+            cog.outl()
+            for algorithm_name in extractor['algorithms']:
+                for input_name in extractor['algorithms'][algorithm_name]['inputs']:
+                    cog.outl('  _%s->input("%s").set(%s);' % (algorithm_name, input_name, variablesChain))
+                outputs = extractor['algorithms'][algorithm_name]['outputs'] if algorithm_name != last_algorithm_name else {last_algorithm_output_name:extractor['algorithms'][algorithm_name]['outputs'][last_algorithm_output_name]}
+                for output_name in outputs:
+                    if (algorithm_name == 'FrameCutter'):
+                        variableFrame = output_name + algorithm_name
+                    cog.outl('  %s %s%s;' % (extractor['algorithms'][algorithm_name]['outputs'][output_name], output_name, algorithm_name))
+                    variablesChain = output_name + algorithm_name
+                    cog.outl('  _%s->output("%s").set(%s);' % (algorithm_name, output_name, variablesChain))
+            cog.outl()
+            cog.outl('  while (true) {')
+            cog.outl('      // compute a frame')
+            cog.outl('      _%s->compute();' % list(extractor['algorithms'].keys())[0])
+            cog.outl('      // if it was the last one (ie: it was empty), then we are done.')
+            cog.outl('      if (!%s.size()) {' % variableFrame)
+            cog.outl('          break;')
+            cog.outl('      }')
 
-            for output_name in extractor['algorithms'][algorithm_name]['outputs']:
-                if (algorithm_name == 'FrameCutter'):
-                    variableFrame = output_name + algorithm_name
-                cog.outl('  %s %s%s;' % (extractor['algorithms'][algorithm_name]['outputs'][output_name], output_name, algorithm_name))
-                variablesChain = output_name + algorithm_name
-                cog.outl('  _%s->output("%s").set(%s);' % (algorithm_name, output_name, variablesChain))
+            cog.outl('      // if the frame is silent, just drop it and go on processing')
+            cog.outl('      if (isSilent(%s)) continue;' % variableFrame)
+            for i in range(1, len(list(extractor['algorithms'].keys())) ):
+                cog.outl('      _%s->compute();' % list(extractor['algorithms'].keys())[i])
 
-        cog.outl()
-        cog.outl('  while (true) {')
-        cog.outl('      // compute a frame')
-        cog.outl('      _%s->compute();' % list(extractor['algorithms'].keys())[0])
-        cog.outl('      // if it was the last one (ie: it was empty), then we are done.')
-        cog.outl('      if (!%s.size()) {' % variableFrame)
-        cog.outl('          break;')
-        cog.outl('      }')
+            cog.outl('  }')
+            cog.outl('      return %s;' % variablesChain)
+            cog.outl('};')
 
-        cog.outl('      // if the frame is silent, just drop it and go on processing')
-        cog.outl('      if (isSilent(%s)) continue;' % variableFrame)
-        for i in range(1, len(list(extractor['algorithms'].keys())) ):
-            cog.outl('      _%s->compute();' % list(extractor['algorithms'].keys())[i])
-
-        cog.outl('      }')
-        cog.outl('      return %s;' % variablesChain)
-        cog.outl('};')
-
-        cog.outl()
+            cog.outl()
 
         cog.outl('// method for resetting the internal states used in the extractor')
         cog.outl('void %s::reset() {' % extractor_key)

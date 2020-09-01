@@ -22,7 +22,9 @@ class StartStopSilenceExtractor {
 
     void configure(const int frameSize=512, const int hopSize=256);
 
-    int compute(const val& audioData);
+    int computeStartframe(const val& audioData);
+
+    int computeStopframe(const val& audioData);
 
     void reset();
 
